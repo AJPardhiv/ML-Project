@@ -52,12 +52,17 @@ def check_requirements():
 def check_vosk_model():
     """Check if Vosk model is available"""
     print_header("2. CHECKING VOSK MODEL")
-    
-    model_path = Path("model")
-    
-    if model_path.exists() and (model_path / "conf" / "model.conf").exists():
-        print(f"  ✓ Vosk model found at: {model_path.absolute()}")
-        return True
+
+    candidate_paths = [
+        Path("model"),
+        Path("models/vosk-model-small-en-us-0.15"),
+        Path("models/vosk-model-en-us-0.42-gigaspeech"),
+    ]
+
+    for model_path in candidate_paths:
+        if model_path.exists() and (model_path / "conf" / "model.conf").exists():
+            print(f"  ✓ Vosk model found at: {model_path.absolute()}")
+            return True
     
     print("  ✗ Vosk model NOT found")
     print("\n  To enable voice assistant, download Vosk model:")
@@ -71,8 +76,8 @@ def check_vosk_model():
     print("\n  Option 2: Manual:")
     print("    1. Visit: https://alphacephei.com/vosk/models")
     print("    2. Download: vosk-model-en-us-0.42-gigaspeech.zip")
-    print("    3. Extract to: model/")
-    print("    4. Verify: model/conf/model.conf should exist")
+    print("    3. Extract to: model/ (or models/vosk-model-...)")
+    print("    4. Verify: <model_path>/conf/model.conf should exist")
     
     print("\n  Gesture control will work without Vosk.")
     print("  Voice assistant requires the model.")

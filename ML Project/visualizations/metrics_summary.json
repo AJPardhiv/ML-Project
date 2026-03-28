@@ -1,0 +1,9 @@
+{
+  "train_accuracy": 0.9997282608695652,
+  "test_accuracy": 0.9956521739130435,
+  "test_precision_weighted": 0.9956791232482932,
+  "test_recall_weighted": 0.9956521739130435,
+  "test_f1_weighted": 0.9956564477640866,
+  "roc_micro_auc": 0.9999810964083177,
+  "pr_micro_auc": 0.9999434122396466
+}
