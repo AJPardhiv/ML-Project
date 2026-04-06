@@ -1,0 +1,26 @@
+# Python cache and environments
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.venv/
+venv/
+
+# Build and test outputs
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# IDE/system files
+.vscode/
+.DS_Store
+Thumbs.db
+
+# Runtime and generated artifacts
+*.log
+data/
+visualizations/
+confusion_matrix.png
+
+# Local downloaded archives
+*.zip

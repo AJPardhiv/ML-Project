@@ -1,15 +1,14 @@
-"""
-infer_live.py - Live gesture inference using trained ML model
-Loads trained model and performs real-time gesture classification on webcam
-"""
+"""Live gesture inference using a trained ML model."""
+
+import sys
+import time
+from typing import Optional, Tuple
 
 import cv2
-import mediapipe as mp
 import joblib
+import mediapipe as mp
 import numpy as np
-import sys
-from typing import Tuple, Optional, Dict
-from actions import ActionBus, create_move_action, create_click_action, create_scroll_action, create_pause_action
+import pyautogui
 
 
 class GestureInference:
@@ -41,6 +40,12 @@ class GestureInference:
         # State
         self.prev_position = None
         self.confidence_threshold = 0.6
+        self.action_cooldown = 0.35
+        self._last_action_ts = {
+            "click": 0.0,
+            "scroll": 0.0,
+            "pause": 0.0,
+        }
         
         # Load model
         self._load_model()
@@ -154,12 +159,12 @@ class GestureInference:
         
         return cv2.flip(frame, 1), gesture_name, confidence
     
-    def run_inference(self, action_bus: Optional[ActionBus] = None):
+    def run_inference(self, execute_actions: bool = False):
         """
         Run live inference on webcam
         
         Args:
-            action_bus: Optional ActionBus to send actions
+            execute_actions: If True, executes click/scroll actions directly.
         """
         if self.model is None:
             print("[Inference] Model not loaded!")
@@ -195,9 +200,8 @@ class GestureInference:
                     if gesture_history:
                         smoothed_gesture = max(set(gesture_history), key=gesture_history.count)
                         
-                        # Send action if we have action bus
-                        if action_bus:
-                            self._send_action(action_bus, smoothed_gesture)
+                        if execute_actions:
+                            self._execute_action(smoothed_gesture)
                 
                 cv2.imshow("Gesture Inference", annotated_frame)
                 
@@ -210,21 +214,25 @@ class GestureInference:
             cap.release()
             cv2.destroyAllWindows()
     
-    @staticmethod
-    def _send_action(action_bus: ActionBus, gesture: str):
-        """Send action to action bus based on gesture"""
-        if gesture == "move":
-            # Mouse move would be handled continuously
-            pass
-        elif gesture == "click":
-            action = create_click_action(source="ml_gesture")
-            action_bus.enqueue(action)
-        elif gesture == "scroll":
-            action = create_scroll_action(direction="up", source="ml_gesture")
-            action_bus.enqueue(action)
-        elif gesture == "pause":
-            action = create_pause_action(source="ml_gesture")
-            action_bus.enqueue(action)
+    def _execute_action(self, gesture: str) -> None:
+        """Execute optional desktop actions with per-gesture cooldown."""
+        now = time.time()
+        if gesture not in self._last_action_ts:
+            return
+        if now - self._last_action_ts[gesture] < self.action_cooldown:
+            return
+
+        try:
+            if gesture == "click":
+                pyautogui.click()
+            elif gesture == "scroll":
+                pyautogui.scroll(120)
+            elif gesture == "pause":
+                # In inference mode, pause is informational only.
+                print("[Inference] Pause gesture detected")
+            self._last_action_ts[gesture] = now
+        except Exception as exc:
+            print(f"[Inference] Action execution error: {exc}")
 
 
 def main():
@@ -234,7 +242,7 @@ def main():
     parser = argparse.ArgumentParser(description="Live gesture inference with trained model")
     parser.add_argument("--model", type=str, default="models/gesture_model.joblib", help="Path to trained model")
     parser.add_argument("--threshold", type=float, default=0.6, help="Confidence threshold (0-1)")
-    parser.add_argument("--with-actions", action="store_true", help="Send actions to action bus")
+    parser.add_argument("--with-actions", action="store_true", help="Execute click/scroll actions directly")
     
     args = parser.parse_args()
     
@@ -246,19 +254,10 @@ def main():
         print("[Main] Failed to load model. Exiting.")
         sys.exit(1)
     
-    # Create action bus if requested
-    action_bus = None
-    if args.with_actions:
-        action_bus = ActionBus()
-        action_bus.start()
-    
     try:
-        inference.run_inference(action_bus=action_bus)
+        inference.run_inference(execute_actions=args.with_actions)
     except KeyboardInterrupt:
         print("\n[Main] Interrupted")
-    finally:
-        if action_bus:
-            action_bus.stop()
 
 
 if __name__ == "__main__":

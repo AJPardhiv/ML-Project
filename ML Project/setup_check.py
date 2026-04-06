@@ -246,15 +246,15 @@ def print_next_steps():
     print("  1. RULE-BASED GESTURE CONTROL (No ML training):")
     print("     python main.py")
     
-    print("\n  2. ML-BASED GESTURE CONTROL (Train custom model):")
+    print("\n  2. ML PIPELINE (Train and evaluate custom model):")
     print("     # Collect training data:")
     print("     python collect_data.py")
     print("     ")
     print("     # Train model:")
     print("     python train_model.py --type rf")
     print("     ")
-    print("     # Run with model:")
-    print("     python main.py --ml --model models/gesture_model.joblib")
+    print("     # Run live inference with model:")
+    print("     python infer_live.py --model models/gesture_model.joblib")
     
     print("\n  3. INFERENCE ONLY (Test model):")
     print("     python infer_live.py --model models/gesture_model.joblib")
